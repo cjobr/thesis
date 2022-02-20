@@ -1,0 +1,122 @@
+cur time 800
+memory_transfer: 0 memory_needed: 8
+memory_transfer: 8 memory_needed: 8
+memory_transfer: 8 memory_needed: 8
+enter enough gpu memory state
+prefetch id: 1's data
+prefetch time: 800 computation time: 800
+current application id: 0 800 memory used: 16
+update: 0 7 100
+update: 1 0 0
+update: 2 0 0
+............................................
+memory_transfer: 0 memory_needed: 8
+memory_transfer: 0 memory_needed: 8
+memory_transfer: 8 memory_needed: 8
+enter not enough gpu memory state
+evict id: 0's data
+prefetch id: 2's data
+prefetch time: 1600 computation time: 1600
+current application id: 1 1600 memory used: 16
+update: 0 8 0
+update: 1 7 900
+update: 2 0 0
+............................................
+memory_transfer: 8 memory_needed: 8
+memory_transfer: 0 memory_needed: 8
+memory_transfer: 0 memory_needed: 8
+enter not enough gpu memory state
+evict id: 1's data
+prefetch id: 0's data
+prefetch time: 1600 computation time: 1600
+current application id: 2 1600 memory used: 16
+update: 0 8 0
+update: 1 8 0
+update: 2 7 900
+............................................
+memory_transfer: 0 memory_needed: 8
+memory_transfer: 8 memory_needed: 8
+memory_transfer: 0 memory_needed: 8
+enter not enough gpu memory state
+evict id: 2's data
+prefetch id: 1's data
+prefetch time: 1600 computation time: 1600
+current application id: 0 1600 memory used: 16
+update: 0 15 900
+update: 1 8 0
+update: 2 8 0
+............................................
+memory_transfer: 0 memory_needed: 8
+memory_transfer: 0 memory_needed: 8
+memory_transfer: 8 memory_needed: 8
+enter not enough gpu memory state
+evict id: 0's data
+prefetch id: 2's data
+prefetch time: 1600 computation time: 1600
+current application id: 1 1600 memory used: 16
+update: 0 16 0
+update: 1 15 900
+update: 2 8 0
+............................................
+memory_transfer: 8 memory_needed: 8
+memory_transfer: 0 memory_needed: 8
+memory_transfer: 0 memory_needed: 8
+enter not enough gpu memory state
+evict id: 1's data
+prefetch id: 0's data
+prefetch time: 1600 computation time: 1600
+current application id: 2 1600 memory used: 16
+update: 0 16 0
+update: 1 16 0
+update: 2 15 900
+............................................
+memory_transfer: 0 memory_needed: 8
+memory_transfer: 8 memory_needed: 8
+memory_transfer: 0 memory_needed: 8
+enter not enough gpu memory state
+evict id: 2's data
+prefetch id: 1's data
+prefetch time: 1600 computation time: 700
+current application id: 0 1600 memory used: 16
+update: 0 23 0
+update: 1 16 0
+update: 2 16 0
+............................................
+memory_transfer: 0 memory_needed: 8
+memory_transfer: 0 memory_needed: 8
+memory_transfer: 8 memory_needed: 8
+enter enough gpu memory state
+prefetch id: 2's data
+prefetch time: 800 computation time: 700
+current application id: 1 800 memory used: 16
+update: 0 23 0
+update: 1 16 0
+update: 2 16 0
+............................................
+memory_transfer: 0 memory_needed: 8
+memory_transfer: 0 memory_needed: 8
+memory_transfer: 0 memory_needed: 8
+enter enough gpu memory state
+prefetch id: 0's data
+prefetch time: 150 computation time: 700
+current application id: 2 700 memory used: 16
+update: 0 23 0
+update: 1 16 0
+update: 2 23 0
+............................................
+memory_transfer: 0 memory_needed: 8
+memory_transfer: 0 memory_needed: 8
+memory_transfer: 0 memory_needed: 8
+end execution
+............................................
+memory_transfer: 0 memory_needed: 8
+memory_transfer: 0 memory_needed: 8
+memory_transfer: 0 memory_needed: 8
+enter enough gpu memory state
+prefetch id: 2's data
+prefetch time: 150 computation time: 700
+current application id: 1 700 memory used: 8
+update: 0 23 0
+update: 1 23 0
+update: 2 23 0
+total time: 13400
