@@ -15,7 +15,17 @@ using namespace localsolver;
 class LSmakespan : public LSExternalFunction<lsdouble> {
 public:
     lsdouble call(const LSExternalArgumentValues& argumentValues) {
-        return argumentValues.getDoubleValue(0);
+        LSCollection permutation = argumentValues.getCollectionValue(0);
+        int size = permutation.count();
+        std::vector<int> p;
+        for(int i = 0; i < size; i++)
+        {
+          p.push_back(permutation[i]);
+          //std::cout<<p[i]<<" ";
+        }
+        lsdouble t;
+
+        return  0.0;
     }
 };
 
@@ -74,7 +84,9 @@ int pick_victim(vector<Client> &apps, int cur_idx, int nxt_idx)
   }
   return idx;
 }
-
+vector<Client> apps;
+unordered_map<int, vector<int>> map;
+double GPU_used = 0;
 int main(int argc, char *argv[])
 {
     //input: open input file to read each client's information(time_ , memory, ....)
@@ -85,16 +97,16 @@ int main(int argc, char *argv[])
   string text;
   getline(test, text);
   num_client = std::stoi(text);
-  vector<Client> apps;
+  
   queue<Client> job_queue;
   
   //initialize each client
-  //cout<<num_client<<endl;
+  cout<<num_client<<endl;
   for(int i = 0; i < num_client; i++)
   {
     Client* temp = new Client();
     getline(test, text);
-    //cout<<"file name: "<<text<<endl;
+    cout<<"file name: "<<text<<endl;
     ifstream app(text);
     getline(app, text);
     temp -> memory_needed = std::stod(text);
@@ -129,7 +141,7 @@ int main(int argc, char *argv[])
 
   int count = 0;
   vector<vector<int>> index;
-  unordered_map<int, vector<int>> map;
+  
   //unordered_map<vector<int>, int> index_to_count;
   for(int i = 0; i < apps.size(); i++)
   {
@@ -155,7 +167,7 @@ int main(int argc, char *argv[])
   {
     for(int j = 1; j < index[i].size(); j++)
     {
-      m.constraint(m.indexOf(kernels, index[i][j - 1]) < m.indexOf(kernels, index[i][j]));
+     m.constraint(m.indexOf(kernels, index[i][j - 1]) < m.indexOf(kernels, index[i][j]));
     }
   }
   LSmakespan makespanCode;
@@ -166,5 +178,5 @@ int main(int argc, char *argv[])
   m.minimize(makespan(kernels));
   m.close();
   ls.solve();
-  ls.getSolution();
+  //ls.getSolution();
 }
