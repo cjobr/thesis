@@ -1,5 +1,5 @@
 4
-app1.txt
-app2.txt
-app3.txt
-app4.txt
+/home/cjobr/thesis/testcase/app1.txt
+/home/cjobr/thesis/testcase/app2.txt
+/home/cjobr/thesis/testcase/app3.txt
+/home/cjobr/thesis/testcase/app4.txt
