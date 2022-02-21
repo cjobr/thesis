@@ -11,23 +11,9 @@
 #include <unordered_map>
 
 
-using namespace localsolver;
-class LSmakespan : public LSExternalFunction<lsdouble> {
-public:
-    lsdouble call(const LSExternalArgumentValues& argumentValues) {
-        LSCollection permutation = argumentValues.getCollectionValue(0);
-        int size = permutation.count();
-        std::vector<int> p;
-        for(int i = 0; i < size; i++)
-        {
-          p.push_back(permutation[i]);
-          //std::cout<<p[i]<<" ";
-        }
-        lsdouble t;
 
-        return  0.0;
-    }
-};
+using namespace localsolver;
+
 
 #define BANDWIDTH 0.01 // (GB/ms)
 #define WINDOW_SIZE 500.0 //ms
@@ -87,6 +73,81 @@ int pick_victim(vector<Client> &apps, int cur_idx, int nxt_idx)
 vector<Client> apps;
 unordered_map<int, vector<int>> map;
 double GPU_used = 0;
+int ClientOfKernel(int number)
+{
+  return map[number][0];
+}
+int indexOfKernel(int number)
+{
+  return map[number][1];
+}
+
+int findRangeOfClient(vector<int> p, int indexOfP)
+{
+  int i;
+  for(i = indexOfP; i < p.size() - 1; i++)
+  {
+    if(ClientOfKernel(p[i]) != ClientOfKernel(p[i+ 1]))return i;
+  }
+  return i;
+  
+}
+
+double calculateComputation(vector<int> p, int range, int indexOfP)
+{
+  double computation_time = 0;
+  return computation_time;
+
+}
+class LSmakespan : public LSExternalFunction<lsdouble> {
+public:
+    lsdouble call(const LSExternalArgumentValues& argumentValues) {
+        LSCollection permutation = argumentValues.getCollectionValue(0);
+        int size = permutation.count();
+        std::vector<int> p;
+        for(int i = 0; i < size; i++)
+        {
+          p.push_back(permutation[i]);
+          //std::cout<<p[i]<<" ";
+        }
+        int indexOfP = 0;
+        double make_span = 0;
+        int first_client = ClientOfKernel(p[0]);
+        make_span += apps[first_client].memory_transfer/BANDWIDTH;
+        GPU_used += apps[first_client].memory_transfer;
+        apps[first_client].memory_transfer = 0;
+        int Isend = 0;
+        while(indexOfP < p.size())
+        {
+           int cur_client = ClientOfKernel(p[indexOfP]);
+           int range = findRangeOfClient(p, indexOfP);
+           int next_client;
+           if(range + 1 < p.size())next_client = ClientOfKernel(p[range + 1]);
+           else Isend = 1;
+
+           double transfer_time = 0;
+           double computation_time = calculateComputation(p, range, indexOfP);
+           if(Isend)
+           {
+             make_span += computation_time;
+             break;
+           }
+           if(GPU_used + apps[next_client].memory_transfer <= MEMORY_CAPACITY)
+           {
+
+           }
+           else if(GPU_used + apps[next_client].memory_transfer > MEMORY_CAPACITY && MEMORY_CAPACITY - apps[cur_client].memory_needed >= apps[next_client].memory_transfer)
+           {
+
+           }
+        }
+        return make_span;
+        
+    }
+};
+
+
+
 int main(int argc, char *argv[])
 {
     //input: open input file to read each client's information(time_ , memory, ....)
