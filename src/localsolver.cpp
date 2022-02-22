@@ -75,7 +75,14 @@ unordered_map<int, vector<int>> map;
 double GPU_used = 0;
 int ClientOfKernel(int number)
 {
-  return map[number][0];
+  if(!map.count(number))
+  {
+    cout<<"not found!"<<endl;
+    return 0;
+  }
+  vector<int> res = map[number];
+  if(res.size() > 0)return res[0];
+  else return 0;
 }
 int indexOfKernel(int number)
 {
@@ -96,6 +103,11 @@ int findRangeOfClient(vector<int> p, int indexOfP)
 double calculateComputation(vector<int> p, int range, int indexOfP)
 {
   double computation_time = 0;
+  int cur = ClientOfKernel(p[indexOfP]);
+  for(int i = indexOfKernel(p[indexOfP]); i < apps[cur].time_.size(); i++)
+  {
+    computation_time += apps[cur].time_[i].second;
+  }
   return computation_time;
 
 }
@@ -103,23 +115,34 @@ class LSmakespan : public LSExternalFunction<lsdouble> {
 public:
     lsdouble call(const LSExternalArgumentValues& argumentValues) {
         LSCollection permutation = argumentValues.getCollectionValue(0);
+        vector<Client> temp = apps;
         int size = permutation.count();
         std::vector<int> p;
+        std::vector<int> c;
+        std::vector<int> idx;
+        int first_client;
         for(int i = 0; i < size; i++)
         {
-          p.push_back(permutation[i]);
-          //std::cout<<p[i]<<" ";
+          p.push_back(permutation.get(i));
+          c.push_back(ClientOfKernel(p[i]));
+          idx.push_back(indexOfKernel(p[i]));
         }
+
         int indexOfP = 0;
         double make_span = 0;
-        int first_client = ClientOfKernel(p[0]);
-        make_span += apps[first_client].memory_transfer/BANDWIDTH;
-        GPU_used += apps[first_client].memory_transfer;
-        apps[first_client].memory_transfer = 0;
+       
         int Isend = 0;
         while(indexOfP < p.size())
         {
+           if(indexOfP == 0)
+           {
+              first_client = c[0];
+              make_span += temp[first_client].memory_transfer/BANDWIDTH;
+              GPU_used += temp[first_client].memory_transfer;
+              temp[first_client].memory_transfer = 0;
+           }
            int cur_client = ClientOfKernel(p[indexOfP]);
+           //cout<<p[indexOfP]<<endl;
            int range = findRangeOfClient(p, indexOfP);
            int next_client;
            if(range + 1 < p.size())next_client = ClientOfKernel(p[range + 1]);
@@ -132,20 +155,20 @@ public:
              make_span += computation_time;
              break;
            }
-           if(GPU_used + apps[next_client].memory_transfer <= MEMORY_CAPACITY)
+           if(GPU_used + temp[next_client].memory_transfer <= MEMORY_CAPACITY)
            {
 
            }
-           else if(GPU_used + apps[next_client].memory_transfer > MEMORY_CAPACITY && MEMORY_CAPACITY - apps[cur_client].memory_needed >= apps[next_client].memory_transfer)
+           else if(GPU_used + temp[next_client].memory_transfer > MEMORY_CAPACITY && MEMORY_CAPACITY - temp[cur_client].memory_needed >= temp[next_client].memory_transfer)
            {
 
            }
+           indexOfP++;
         }
         return make_span;
         
     }
 };
-
 
 
 int main(int argc, char *argv[])
@@ -171,7 +194,9 @@ int main(int argc, char *argv[])
     ifstream app(text);
     getline(app, text);
     temp -> memory_needed = std::stod(text);
+    cout<<temp -> memory_needed<<endl;
     temp -> memory_transfer = temp -> memory_needed;
+    cout<<temp -> memory_transfer<<endl;
     temp -> idx = i;
     string str;
     while(getline(app, text, '\n'))
@@ -222,6 +247,8 @@ int main(int argc, char *argv[])
   
   LocalSolver ls;
   LSModel m = ls.getModel();
+  LSParam param = ls.getParam();
+  param.setNbThreads(1);
   LSExpression kernels = m.listVar(count);
   m.constraint(m.count(kernels) == count);
   for(int i = 0; i < index.size(); i++)
@@ -230,6 +257,7 @@ int main(int argc, char *argv[])
     {
      m.constraint(m.indexOf(kernels, index[i][j - 1]) < m.indexOf(kernels, index[i][j]));
     }
+    cout<<endl;
   }
   LSmakespan makespanCode;
 // Step 2: Turn the external code into an LSExpression
