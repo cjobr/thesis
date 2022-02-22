@@ -72,7 +72,7 @@ int pick_victim(vector<Client> &apps, int cur_idx, int nxt_idx)
 }
 vector<Client> apps;
 unordered_map<int, vector<int>> map;
-double GPU_used = 0;
+
 int ClientOfKernel(int number)
 {
   if(!map.count(number))
@@ -100,14 +100,22 @@ int findRangeOfClient(vector<int> p, int indexOfP)
   
 }
 
-double calculateComputation(vector<int> p, int range, int indexOfP)
+double calculateComputation(vector<int> p, int range, int indexOfP, vector<Client>& temp)
 {
   double computation_time = 0;
   int cur = ClientOfKernel(p[indexOfP]);
-  for(int i = indexOfKernel(p[indexOfP]); i < apps[cur].time_.size(); i++)
+  int start = indexOfKernel(p[indexOfP]);
+  while(start != temp[cur].cur_position)
   {
-    computation_time += apps[cur].time_[i].second;
+    computation_time += temp[cur].time_[temp[cur].cur_position].second - temp[cur].cur_time;
+    temp[cur].cur_position++;
+    temp[cur].cur_time = 0;
   }
+  for(int i = start; i <= indexOfKernel(p[range]); i++)
+  {
+    computation_time += temp[cur].time_[i].second;
+  }
+  temp[cur].cur_position = indexOfKernel(p[range]) + 1;
   return computation_time;
 
 }
@@ -124,11 +132,13 @@ public:
         for(int i = 0; i < size; i++)
         {
           p.push_back(permutation.get(i));
+          cout<<p[i]<<" "; 
           c.push_back(ClientOfKernel(p[i]));
           idx.push_back(indexOfKernel(p[i]));
         }
-
-        int indexOfP = 0;
+        cout<<endl;
+        double GPU_used = 0;
+       /* int indexOfP = 0;
         double make_span = 0;
        
         int Isend = 0;
@@ -164,7 +174,190 @@ public:
 
            }
            indexOfP++;
+        }*/
+        int timestamp = 0;
+        int indexOfP = 0;
+        double make_span = 0;
+        double last_make_span;
+        int Isend = 0;
+        while(indexOfP < p.size())
+        {
+           timestamp++;
+           last_make_span = make_span;
+           if(indexOfP == 0)
+           {
+              
+              first_client = c[0];
+              make_span += temp[first_client].memory_transfer/BANDWIDTH;
+              GPU_used += temp[first_client].memory_transfer;
+              temp[first_client].memory_transfer = 0;
+              double duration = make_span - last_make_span;
+              cout<<"transfer first client's data transfer time: "<< duration<<endl;
+              cout<<"............................................."<<endl;
+           }
+           int cur_client = ClientOfKernel(p[indexOfP]);
+           cout<<"current client: "<<cur_client<<endl;
+           //cout<<p[indexOfP]<<endl;
+           int range = findRangeOfClient(p, indexOfP);
+           cout<<"range = "<<range<<endl;
+           int next_client;
+           if(range + 1 < p.size())next_client = ClientOfKernel(p[range + 1]);
+           else Isend = 1;
+
+           double transfer_time = 0;
+           double computation_time = calculateComputation(p, range, indexOfP, temp);
+           
+           temp[cur_client].last_accessed = timestamp;
+           if(Isend)
+           {
+             
+             make_span += computation_time;
+             double duration = make_span - last_make_span;
+             cout<<"duration :"<< duration<<endl;
+             break;
+           }
+           if(GPU_used + temp[next_client].memory_transfer <= MEMORY_CAPACITY)
+           {
+               cout<<"enter enough memory state"<<endl;
+               cout<<"prefetch client "<<next_client<<"'s data"<<endl;
+               double transfer_time = temp[next_client].memory_transfer/BANDWIDTH;
+               GPU_used += temp[next_client].memory_transfer;
+               temp[next_client].memory_transfer = 0;
+               
+               int cur_position = temp[cur_client].cur_position;
+               if(computation_time < transfer_time && temp[cur_client].time_[cur_position].first == 0)
+               {
+                    if(computation_time + temp[cur_client].time_[cur_position].second - temp[cur_client].cur_time > transfer_time)
+                    {
+            
+                        temp[cur_client].cur_position = cur_position;
+                        temp[cur_client].cur_time = temp[cur_client].cur_time + (transfer_time - computation_time);
+                        computation_time = transfer_time;
+                        
+                    }
+                    else if(computation_time + temp[cur_client].time_[cur_position].second - temp[cur_client].cur_time == transfer_time)
+                    {
+                        computation_time += temp[cur_client].time_[cur_position].second - temp[cur_client].cur_time;
+                        temp[cur_client].cur_position = cur_position + 1;
+                        temp[cur_client].cur_time = 0;
+                        
+
+                    }
+                    else
+                    {
+                        computation_time += temp[cur_client].time_[cur_position].second - temp[cur_client].cur_time;
+                        temp[cur_client].cur_time = 0;
+                        temp[cur_client].cur_position = cur_position + 1;
+                    }
+               }
+               cout<<"computation time: "<<computation_time<<endl;
+               cout<<"transfer time: "<<transfer_time<<endl;
+               make_span += max(transfer_time, computation_time);
+               cout<<make_span<<endl;
+           }
+           else if(GPU_used + temp[next_client].memory_transfer > MEMORY_CAPACITY && MEMORY_CAPACITY - temp[cur_client].memory_needed >= temp[next_client].memory_transfer)
+           {
+               cout<<"enter not enough memory state"<<endl;
+               double transfer_time = 0;
+
+                //first evict neccesary victims to get enough memory space (include in transfer time)
+                while(GPU_used + temp[next_client].memory_transfer > MEMORY_CAPACITY)
+                {
+                    //cout<<"start evict memory"<<endl;
+                    int victim = pick_victim(temp, cur_client, next_client);
+                    //cout<<"victim is : "<<victim<<endl;
+                    double evict_amount = min(temp[victim].memory_needed - temp[victim].memory_transfer, GPU_used + temp[next_client].memory_transfer - MEMORY_CAPACITY);
+                    GPU_used -= evict_amount;
+                    //cout<<apps[victim].memory_needed<<" "<<apps[victim].memory_transfer<<endl;
+                    //cout<<"GPU memory after eviction: "<<GPU_used<<endl;
+                    transfer_time += evict_amount/BANDWIDTH;
+                    temp[victim].memory_transfer += evict_amount;
+                    cout<<"evict id: "<<victim<<"'s data"<<endl;
+        
+                }
+
+                //then prefetch next client's data, and update transfer time
+                transfer_time += temp[next_client].memory_transfer/BANDWIDTH;
+                cout<<"prefetch id: "<<next_client<<"'s data"<<endl;
+                GPU_used += temp[next_client].memory_transfer;
+                temp[next_client].memory_transfer = 0;
+                int cur_position = temp[cur_client].cur_position;
+               if(computation_time < transfer_time && temp[cur_client].time_[cur_position].first == 0)
+               {
+                    if(computation_time + temp[cur_client].time_[cur_position].second - temp[cur_client].cur_time > transfer_time)
+                    {
+            
+                        temp[cur_client].cur_position = cur_position;
+                        temp[cur_client].cur_time = temp[cur_client].cur_time + (transfer_time - computation_time);
+                        computation_time = transfer_time;
+                        
+                    }
+                    else if(computation_time + temp[cur_client].time_[cur_position].second - temp[cur_client].cur_time == transfer_time)
+                    {
+                        computation_time += temp[cur_client].time_[cur_position].second - temp[cur_client].cur_time;
+                        temp[cur_client].cur_position = cur_position + 1;
+                        temp[cur_client].cur_time = 0;
+                        
+
+                    }
+                    else
+                    {
+                        computation_time += temp[cur_client].time_[cur_position].second - temp[cur_client].cur_time;
+                        temp[cur_client].cur_time = 0;
+                        temp[cur_client].cur_position = cur_position + 1;
+                    }
+               }
+               cout<<"computation time: "<<computation_time<<endl;
+               cout<<"transfer time: "<<transfer_time<<endl;
+               make_span += max(transfer_time, computation_time);
+               
+
+                
+           }
+           double duration_ = make_span - last_make_span;
+           cout<<"duration: "<<duration_<<endl;
+           for(int i = 0; i < temp.size(); i++)
+           {
+                double duration = duration_;
+                if(temp[i].idx == cur_client)
+                {
+                    cout<<"update application "<<temp[i].idx<<" "<<temp[i].cur_position<<" "<<temp[i].cur_time<<endl;
+                    //cout<<"current client"<<endl;
+                    continue;
+                }
+                if(temp[i].time_[temp[i].cur_position].first == 1)
+                {
+                    cout<<"update application "<<temp[i].idx<<" "<<temp[i].cur_position<<" "<<temp[i].cur_time<<endl;
+                    //cout<<"kernel"<<endl;
+                    continue;
+                }
+                while(temp[i].cur_position < temp[i].time_.size() && temp[i].time_[temp[i].cur_position].first == 0 && duration > 0)
+                {
+                    if(temp[i].time_[temp[i].cur_position].second - temp[i].cur_time <= duration)
+                    {
+                        duration -= (temp[i].time_[temp[i].cur_position].second - temp[i].cur_time);
+                        temp[i].cur_position++;
+                        temp[i].cur_time = 0;
+                     }
+                    else
+                    {
+                        temp[i].cur_time += duration;
+                        duration = 0;
+                    }
+
+                }
+                cout<<"update application "<<temp[i].idx<<" "<<temp[i].cur_position<<" "<<temp[i].cur_time<<endl;
+
+           }
+           indexOfP = range + 1;
+           cout<<"current makespan :"<<make_span<<endl;
+           cout<<"index of p "<<indexOfP<<endl;
+           cout<<"........................................"<<endl;
+           
+           
         }
+        cout<<"end simulation total makespan "<<make_span<<endl;
+        cout<<"___________________________________________"<<endl;
         return make_span;
         
     }
@@ -253,9 +446,10 @@ int main(int argc, char *argv[])
   m.constraint(m.count(kernels) == count);
   for(int i = 0; i < index.size(); i++)
   {
-    for(int j = 1; j < index[i].size(); j++)
+    for(int j = 0; j < index[i].size() - 1; j++)
     {
-     m.constraint(m.indexOf(kernels, index[i][j - 1]) < m.indexOf(kernels, index[i][j]));
+     m.constraint(m.indexOf(kernels, index[i][j]) <= m.indexOf(kernels, index[i][j + 1]));
+     cout<<index[i][j]<<" ";
     }
     cout<<endl;
   }

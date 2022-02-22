@@ -104,7 +104,14 @@ double calculateComputation(vector<int> p, int range, int indexOfP, vector<Clien
 {
   double computation_time = 0;
   int cur = ClientOfKernel(p[indexOfP]);
-  for(int i = indexOfKernel(p[indexOfP]); i <= indexOfKernel(p[range]); i++)
+  int start = indexOfKernel(p[indexOfP]);
+  while(start != temp[cur].cur_position)
+  {
+    computation_time += temp[cur].time_[temp[cur].cur_position].second - temp[cur].cur_time;
+    temp[cur].cur_position++;
+    temp[cur].cur_time = 0;
+  }
+  for(int i = start; i <= indexOfKernel(p[range]); i++)
   {
     computation_time += temp[cur].time_[i].second;
   }
@@ -136,9 +143,10 @@ double compute_makespan() {
         while(indexOfP < p.size())
         {
            timestamp++;
+           last_make_span = make_span;
            if(indexOfP == 0)
            {
-              last_make_span = make_span;
+              
               first_client = c[0];
               make_span += temp[first_client].memory_transfer/BANDWIDTH;
               GPU_used += temp[first_client].memory_transfer;
@@ -161,7 +169,7 @@ double compute_makespan() {
            temp[cur_client].last_accessed = timestamp;
            if(Isend)
            {
-             last_make_span = make_span;
+             
              make_span += computation_time;
              double duration = make_span - last_make_span;
              cout<<"duration :"<< duration<<endl;
@@ -170,10 +178,11 @@ double compute_makespan() {
            if(GPU_used + temp[next_client].memory_transfer <= MEMORY_CAPACITY)
            {
                cout<<"enter enough memory state"<<endl;
+               cout<<"prefetch client "<<next_client<<"'s data"<<endl;
                double transfer_time = temp[next_client].memory_transfer/BANDWIDTH;
                GPU_used += temp[next_client].memory_transfer;
                temp[next_client].memory_transfer = 0;
-               cout<<"computation time: "<<computation_time<<endl;
+               
                int cur_position = temp[cur_client].cur_position;
                if(computation_time < transfer_time && temp[cur_client].time_[cur_position].first == 0)
                {
@@ -200,6 +209,8 @@ double compute_makespan() {
                         temp[cur_client].cur_position = cur_position + 1;
                     }
                }
+               cout<<"computation time: "<<computation_time<<endl;
+               cout<<"transfer time: "<<transfer_time<<endl;
                make_span += max(transfer_time, computation_time);
                cout<<make_span<<endl;
            }
@@ -255,12 +266,15 @@ double compute_makespan() {
                         temp[cur_client].cur_position = cur_position + 1;
                     }
                }
+               cout<<"computation time: "<<computation_time<<endl;
+               cout<<"transfer time: "<<transfer_time<<endl;
                make_span += max(transfer_time, computation_time);
-               cout<<make_span<<endl;
+               
 
                 
            }
            double duration_ = make_span - last_make_span;
+           cout<<"duration: "<<duration_<<endl;
            for(int i = 0; i < temp.size(); i++)
            {
                 double duration = duration_;
@@ -294,6 +308,7 @@ double compute_makespan() {
                 cout<<"update application "<<temp[i].idx<<" "<<temp[i].cur_position<<" "<<temp[i].cur_time<<endl;
 
            }
+           cout<<"current makespan :"<<make_span<<endl;
            cout<<"........................................"<<endl;
            indexOfP = range + 1;
         }
