@@ -19,34 +19,6 @@ Example to Illustrate our observation(schedule and prefetch will affect the tota
 
 
 ## Solution
-* some problems to solve the problem
-    * how to know which tensor(memory size) the kernel want to access : current idea is ***assume that before each client start its computation, it will copy a fixed size of data to GPU memory***.(If prefetch all the data: lower-bound)
-    * the format of input?    
-* use genetic algorithm to get the optimized schedule.
-
-
-
-![](https://i.imgur.com/jIcVjW6.png)
-Implementation includes:
-1. Initial population: population is a schedule plan, produce ***N*** populations in the begining.
-
-![](https://i.imgur.com/cDkQ6y0.png)
-
-
-2. Simulate populations: for each population, we can get execution time and memory swapping size from simulation. 
-3. Select better candidates from initial population: we can select ***M*** better candidates based on a pre-defined function which is based on execution time of a population. There are some selection function(https://en.wikipedia.org/wiki/Selection_(genetic_algorithm)). We can choose a better selection function through experiments.
-4. Crossover
-random an crossover point, CR, to split the population. ex: 5
-To create child P_C1, the crossover takes a
-slice of P2 (P2[1 . . .CR] = [5,6,7,9,10]) to be the first part
-of P_C1. The nodes not in the P_C1 are filled in according
-to their order in P1.
-![](https://i.imgur.com/HNMotG2.png =4000x160)
-
-
-
-5. Mutation
-Change a node's position in the list randomly as long as the result remains a topological ordering.
 
 
 ### Proposed algorithm
