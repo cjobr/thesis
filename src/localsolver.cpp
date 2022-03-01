@@ -102,9 +102,11 @@ int findRangeOfClient(vector<int> p, int indexOfP)
 
 double calculateComputation(vector<int> p, int range, int indexOfP, vector<Client>& temp)
 {
+  
   double computation_time = 0;
   int cur = ClientOfKernel(p[indexOfP]);
   int start = indexOfKernel(p[indexOfP]);
+  if(start < temp[cur].cur_position)return 1.79769e+308;
   while(start != temp[cur].cur_position)
   {
     computation_time += temp[cur].time_[temp[cur].cur_position].second - temp[cur].cur_time;
@@ -206,7 +208,7 @@ public:
 
            double transfer_time = 0;
            double computation_time = calculateComputation(p, range, indexOfP, temp);
-           
+           if(computation_time == 1.79769e+308)return 1.79769e+308;
            temp[cur_client].last_accessed = timestamp;
            if(Isend)
            {
@@ -437,21 +439,35 @@ int main(int argc, char *argv[])
     index.push_back(temp);
 
   }
+  for(int i = 0; i < index.size(); i++)
+  {
+    for(int j = 0; j < index[i].size(); j++)
+    {
+      cout<<index[i][j]<<" ";
+    }
+    cout<<endl;
+  }
   
   LocalSolver ls;
   LSModel m = ls.getModel();
   LSParam param = ls.getParam();
-  param.setNbThreads(1);
+  //param.setNbThreads(1);
+  param.setTimeLimit(1800);
   LSExpression kernels = m.listVar(count);
   m.constraint(m.count(kernels) == count);
   for(int i = 0; i < index.size(); i++)
   {
     for(int j = 0; j < index[i].size() - 1; j++)
     {
-     m.constraint(m.indexOf(kernels, index[i][j]) <= m.indexOf(kernels, index[i][j + 1]));
-     cout<<index[i][j]<<" ";
+      //for(int k = j + 1; k < index[i].size(); k++)
+        m.constraint(m.indexOf(kernels, index[i][j]) < m.indexOf(kernels, index[i][j + 1]));
+     //cout<<index[i][j]<<" ";
     }
-    cout<<endl;
+    //cout<<endl;
+  }
+  for(int i = 0; i < m.getNbConstraints(); i++)
+  {
+    cout<<"constraint "<<i<<" : "<<m.getConstraint(i).toString()<<endl;
   }
   LSmakespan makespanCode;
 // Step 2: Turn the external code into an LSExpression
@@ -461,5 +477,12 @@ int main(int argc, char *argv[])
   m.minimize(makespan(kernels));
   m.close();
   ls.solve();
+  LSSolution sol = ls.getSolution();
+  LSCollection t = sol.getCollectionValue(kernels);
+  for(int i = 0; i < t.count(); i++)
+  {
+    cout<<t[i]<<", ";
+  }
+  cout<<endl;
   //ls.getSolution();
 }
