@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
   {
     Client* temp = new Client();
     getline(test, text);
-    //cout<<"file name: "<<text<<endl;
+            cout<<"file name: "<<text<<endl;
     ifstream app(text);
     getline(app, text);
     temp -> memory_needed = std::stod(text);
@@ -180,7 +180,7 @@ int main(int argc, char *argv[])
        }
        int kind = std::stoi(s[0]);
        double t = std::stod(s[1]);
-       //cout<<kind<<" "<<t<<endl;
+       cout<<kind<<" "<<t<<endl;
        temp -> time_.push_back(make_pair(kind, t));
 
     }

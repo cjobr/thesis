@@ -134,49 +134,216 @@ public:
         for(int i = 0; i < size; i++)
         {
           p.push_back(permutation.get(i));
-          cout<<p[i]<<" "; 
+          //cout<<p[i]<<" "; 
           c.push_back(ClientOfKernel(p[i]));
           idx.push_back(indexOfKernel(p[i]));
         }
-        cout<<endl;
+       // cout<<endl;
         double GPU_used = 0;
-       /* int indexOfP = 0;
-        double make_span = 0;
        
+        int timestamp = 0;
+        int indexOfP = 0;
+        double make_span = 0;
+        double last_make_span;
         int Isend = 0;
         while(indexOfP < p.size())
         {
+           timestamp++;
+           last_make_span = make_span;
            if(indexOfP == 0)
            {
+              
               first_client = c[0];
               make_span += temp[first_client].memory_transfer/BANDWIDTH;
               GPU_used += temp[first_client].memory_transfer;
               temp[first_client].memory_transfer = 0;
+              double duration = make_span - last_make_span;
+              //cout<<"transfer first client's data transfer time: "<< duration<<endl;
+              //cout<<"............................................."<<endl;
            }
            int cur_client = ClientOfKernel(p[indexOfP]);
+           //cout<<"current client: "<<cur_client<<endl;
            //cout<<p[indexOfP]<<endl;
            int range = findRangeOfClient(p, indexOfP);
+           //cout<<"range = "<<range<<endl;
            int next_client;
            if(range + 1 < p.size())next_client = ClientOfKernel(p[range + 1]);
            else Isend = 1;
 
            double transfer_time = 0;
-           double computation_time = calculateComputation(p, range, indexOfP);
+           double computation_time = calculateComputation(p, range, indexOfP, temp);
+           if(computation_time == 1.79769e+308)return 1.79769e+308;
+           temp[cur_client].last_accessed = timestamp;
            if(Isend)
            {
+             
              make_span += computation_time;
+             double duration = make_span - last_make_span;
+             //cout<<"duration :"<< duration<<endl;
              break;
            }
            if(GPU_used + temp[next_client].memory_transfer <= MEMORY_CAPACITY)
            {
+               //cout<<"enter enough memory state"<<endl;
+               //cout<<"prefetch client "<<next_client<<"'s data"<<endl;
+               double transfer_time = temp[next_client].memory_transfer/BANDWIDTH;
+               GPU_used += temp[next_client].memory_transfer;
+               temp[next_client].memory_transfer = 0;
+               
+               int cur_position = temp[cur_client].cur_position;
+               if(computation_time < transfer_time && temp[cur_client].time_[cur_position].first == 0)
+               {
+                    if(computation_time + temp[cur_client].time_[cur_position].second - temp[cur_client].cur_time > transfer_time)
+                    {
+            
+                        temp[cur_client].cur_position = cur_position;
+                        temp[cur_client].cur_time = temp[cur_client].cur_time + (transfer_time - computation_time);
+                        computation_time = transfer_time;
+                        
+                    }
+                    else if(computation_time + temp[cur_client].time_[cur_position].second - temp[cur_client].cur_time == transfer_time)
+                    {
+                        computation_time += temp[cur_client].time_[cur_position].second - temp[cur_client].cur_time;
+                        temp[cur_client].cur_position = cur_position + 1;
+                        temp[cur_client].cur_time = 0;
+                        
 
+                    }
+                    else
+                    {
+                        computation_time += temp[cur_client].time_[cur_position].second - temp[cur_client].cur_time;
+                        temp[cur_client].cur_time = 0;
+                        temp[cur_client].cur_position = cur_position + 1;
+                    }
+               }
+               //cout<<"computation time: "<<computation_time<<endl;
+               //cout<<"transfer time: "<<transfer_time<<endl;
+               make_span += max(transfer_time, computation_time);
+               //cout<<make_span<<endl;
            }
            else if(GPU_used + temp[next_client].memory_transfer > MEMORY_CAPACITY && MEMORY_CAPACITY - temp[cur_client].memory_needed >= temp[next_client].memory_transfer)
            {
+               //cout<<"enter not enough memory state"<<endl;
+               double transfer_time = 0;
+
+                //first evict neccesary victims to get enough memory space (include in transfer time)
+                while(GPU_used + temp[next_client].memory_transfer > MEMORY_CAPACITY)
+                {
+                    //cout<<"start evict memory"<<endl;
+                    int victim = pick_victim(temp, cur_client, next_client);
+                    //cout<<"victim is : "<<victim<<endl;
+                    double evict_amount = min(temp[victim].memory_needed - temp[victim].memory_transfer, GPU_used + temp[next_client].memory_transfer - MEMORY_CAPACITY);
+                    GPU_used -= evict_amount;
+                    //cout<<apps[victim].memory_needed<<" "<<apps[victim].memory_transfer<<endl;
+                    //cout<<"GPU memory after eviction: "<<GPU_used<<endl;
+                    transfer_time += evict_amount/BANDWIDTH;
+                    temp[victim].memory_transfer += evict_amount;
+                    //cout<<"evict id: "<<victim<<"'s data"<<endl;
+        
+                }
+
+                //then prefetch next client's data, and update transfer time
+                transfer_time += temp[next_client].memory_transfer/BANDWIDTH;
+                //cout<<"prefetch id: "<<next_client<<"'s data"<<endl;
+                GPU_used += temp[next_client].memory_transfer;
+                temp[next_client].memory_transfer = 0;
+                int cur_position = temp[cur_client].cur_position;
+               if(computation_time < transfer_time && temp[cur_client].time_[cur_position].first == 0)
+               {
+                    if(computation_time + temp[cur_client].time_[cur_position].second - temp[cur_client].cur_time > transfer_time)
+                    {
+            
+                        temp[cur_client].cur_position = cur_position;
+                        temp[cur_client].cur_time = temp[cur_client].cur_time + (transfer_time - computation_time);
+                        computation_time = transfer_time;
+                        
+                    }
+                    else if(computation_time + temp[cur_client].time_[cur_position].second - temp[cur_client].cur_time == transfer_time)
+                    {
+                        computation_time += temp[cur_client].time_[cur_position].second - temp[cur_client].cur_time;
+                        temp[cur_client].cur_position = cur_position + 1;
+                        temp[cur_client].cur_time = 0;
+                        
+
+                    }
+                    else
+                    {
+                        computation_time += temp[cur_client].time_[cur_position].second - temp[cur_client].cur_time;
+                        temp[cur_client].cur_time = 0;
+                        temp[cur_client].cur_position = cur_position + 1;
+                    }
+               }
+               //cout<<"computation time: "<<computation_time<<endl;
+               //cout<<"transfer time: "<<transfer_time<<endl;
+               make_span += max(transfer_time, computation_time);
+               
+
+                
+           }
+           double duration_ = make_span - last_make_span;
+           //cout<<"duration: "<<duration_<<endl;
+           for(int i = 0; i < temp.size(); i++)
+           {
+                double duration = duration_;
+                if(temp[i].idx == cur_client)
+                {
+                    //cout<<"update application "<<temp[i].idx<<" "<<temp[i].cur_position<<" "<<temp[i].cur_time<<endl;
+                    //cout<<"current client"<<endl;
+                    continue;
+                }
+                if(temp[i].time_[temp[i].cur_position].first == 1)
+                {
+                    //cout<<"update application "<<temp[i].idx<<" "<<temp[i].cur_position<<" "<<temp[i].cur_time<<endl;
+                    //cout<<"kernel"<<endl;
+                    continue;
+                }
+                while(temp[i].cur_position < temp[i].time_.size() && temp[i].time_[temp[i].cur_position].first == 0 && duration > 0)
+                {
+                    if(temp[i].time_[temp[i].cur_position].second - temp[i].cur_time <= duration)
+                    {
+                        duration -= (temp[i].time_[temp[i].cur_position].second - temp[i].cur_time);
+                        temp[i].cur_position++;
+                        temp[i].cur_time = 0;
+                     }
+                    else
+                    {
+                        temp[i].cur_time += duration;
+                        duration = 0;
+                    }
+
+                }
+                //cout<<"update application "<<temp[i].idx<<" "<<temp[i].cur_position<<" "<<temp[i].cur_time<<endl;
 
            }
-           indexOfP++;
-        }*/
+           indexOfP = range + 1;
+           //cout<<"current makespan :"<<make_span<<endl;
+           //cout<<"index of p "<<indexOfP<<endl;
+           //cout<<"........................................"<<endl;
+           
+           
+        }
+        //cout<<"end simulation total makespan "<<make_span<<endl;
+        //cout<<"___________________________________________"<<endl;
+        return make_span;
+        
+    }
+};
+
+double compute_solution(std::vector<int> p) {
+        //LSCollection permutation = argumentValues.getCollectionValue(0);
+        vector<Client> temp = apps;
+        double GPU_used = 0;
+     
+        cout<<p.size()<<endl;
+        int size = p.size();
+        std::vector<int> c;
+        std::vector<int> idx;
+        int first_client;
+        for(int i = 0; i < size; i++)
+        {
+          c.push_back(ClientOfKernel(p[i]));
+          idx.push_back(indexOfKernel(p[i]));
+        }
         int timestamp = 0;
         int indexOfP = 0;
         double make_span = 0;
@@ -195,20 +362,19 @@ public:
               temp[first_client].memory_transfer = 0;
               double duration = make_span - last_make_span;
               cout<<"transfer first client's data transfer time: "<< duration<<endl;
-              cout<<"............................................."<<endl;
            }
            int cur_client = ClientOfKernel(p[indexOfP]);
            cout<<"current client: "<<cur_client<<endl;
            //cout<<p[indexOfP]<<endl;
            int range = findRangeOfClient(p, indexOfP);
-           cout<<"range = "<<range<<endl;
+          // cout<<"range = "<<range<<endl;
            int next_client;
            if(range + 1 < p.size())next_client = ClientOfKernel(p[range + 1]);
            else Isend = 1;
 
            double transfer_time = 0;
            double computation_time = calculateComputation(p, range, indexOfP, temp);
-           if(computation_time == 1.79769e+308)return 1.79769e+308;
+           
            temp[cur_client].last_accessed = timestamp;
            if(Isend)
            {
@@ -351,27 +517,20 @@ public:
                 cout<<"update application "<<temp[i].idx<<" "<<temp[i].cur_position<<" "<<temp[i].cur_time<<endl;
 
            }
-           indexOfP = range + 1;
            cout<<"current makespan :"<<make_span<<endl;
-           cout<<"index of p "<<indexOfP<<endl;
            cout<<"........................................"<<endl;
-           
-           
+           indexOfP = range + 1;
         }
-        cout<<"end simulation total makespan "<<make_span<<endl;
-        cout<<"___________________________________________"<<endl;
+        cout<<"makespan: "<< make_span<<endl;
         return make_span;
         
-    }
-};
-
-
+}
 int main(int argc, char *argv[])
 {
     //input: open input file to read each client's information(time_ , memory, ....)
   char* testcase = argv[1];
   ifstream test(testcase);
-  
+  int time_limit = stoi(argv[2]);
   int num_client;
   string text;
   getline(test, text);
@@ -452,7 +611,7 @@ int main(int argc, char *argv[])
   LSModel m = ls.getModel();
   LSParam param = ls.getParam();
   //param.setNbThreads(1);
-  param.setTimeLimit(1800);
+  param.setTimeLimit(time_limit);
   LSExpression kernels = m.listVar(count);
   m.constraint(m.count(kernels) == count);
   for(int i = 0; i < index.size(); i++)
@@ -479,10 +638,13 @@ int main(int argc, char *argv[])
   ls.solve();
   LSSolution sol = ls.getSolution();
   LSCollection t = sol.getCollectionValue(kernels);
+  vector<int> res;
   for(int i = 0; i < t.count(); i++)
   {
+    res.push_back(t[i]);
     cout<<t[i]<<", ";
   }
+  double final = compute_solution(res);
   cout<<endl;
   //ls.getSolution();
 }
