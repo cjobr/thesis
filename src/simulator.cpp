@@ -153,11 +153,14 @@ int main(int argc, char *argv[])
   vector<Client> apps;
   MemoryManager mm;
   queue<Client> job_queue;
-  
+  vector<vector<int>> index;
   //initialize each client
   //cout<<num_client<<endl;
+  int cnt = 0;
   for(int i = 0; i < num_client; i++)
   {
+    vector<int> idx;
+
     Client* temp = new Client();
     getline(test, text);
             cout<<"file name: "<<text<<endl;
@@ -169,7 +172,6 @@ int main(int argc, char *argv[])
     string str;
     while(getline(app, text, '\n'))
     {
-       
        std::istringstream input;
        input.str(text);
        vector<string> s;
@@ -180,6 +182,12 @@ int main(int argc, char *argv[])
        }
        int kind = std::stoi(s[0]);
        double t = std::stod(s[1]);
+       if(kind == 1)
+       {
+         idx.push_back(cnt);
+         cnt++;
+       }
+       else idx.push_back(-1);
        cout<<kind<<" "<<t<<endl;
        temp -> time_.push_back(make_pair(kind, t));
 
@@ -189,6 +197,7 @@ int main(int argc, char *argv[])
     temp -> cur_time = 0;
     temp -> update_weight();
     apps.push_back(*temp);
+    index.push_back(idx);
   }
   //app.close();
   test.close();
@@ -217,6 +226,7 @@ int main(int argc, char *argv[])
   //periodically calculate each client's weight, and get schedule order.
   int timestamp = 0;
   cout<<"cur time "<<make_span<<endl;
+  vector<int> kernel_order;
   //cout<<"start while loop"<<endl;
   while(!job_queue.empty())
   {
@@ -319,6 +329,7 @@ int main(int argc, char *argv[])
           {
             while(i < cur.time_.size() && cur.time_[i].first == 1)
             {
+              kernel_order.push_back(index[cur_idx][i]);
               computation_time += apps[cur_idx].time_[i].second;
               i++;
             }
@@ -327,6 +338,7 @@ int main(int argc, char *argv[])
           }
           else
           {
+            kernel_order.push_back(index[cur_idx][i]);
             computation_time += apps[cur_idx].time_[i].second;
           }
           
@@ -404,6 +416,7 @@ int main(int argc, char *argv[])
           {
             while(i < cur.time_.size() && cur.time_[i].first == 1)
             {
+              kernel_order.push_back(index[cur_idx][i]);
               computation_time += apps[cur_idx].time_[i].second;
               i++;
             }
@@ -412,6 +425,7 @@ int main(int argc, char *argv[])
           }
           else
           {
+             kernel_order.push_back(index[cur_idx][i]);
             computation_time += apps[cur_idx].time_[i].second;
             if(i == apps[cur_idx].time_.size() - 1)apps[cur_idx].cur_position = i + 1;
           }
@@ -597,5 +611,11 @@ int main(int argc, char *argv[])
   }
   cout<<"total time: "<<make_span<<endl;
   cout<<"expected maximal time: "<<maximal<<endl;
+  ofstream output("kernel_order.log", ios::out | ios::app | ios::binary);
+  for(int i = 0; i < kernel_order.size() - 1; i++)
+  {
+    output<<kernel_order[i]<<endl;
+  }
+  output<<kernel_order[kernel_order.size() - 1];
 
 }

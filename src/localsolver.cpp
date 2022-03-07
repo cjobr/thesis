@@ -106,7 +106,11 @@ double calculateComputation(vector<int> p, int range, int indexOfP, vector<Clien
   double computation_time = 0;
   int cur = ClientOfKernel(p[indexOfP]);
   int start = indexOfKernel(p[indexOfP]);
-  if(start < temp[cur].cur_position)return 1.79769e+308;
+  if(start < temp[cur].cur_position)
+  {
+    cout<<"violate rules"<<endl;
+    return 1.79769e+308;
+  }
   while(start != temp[cur].cur_position)
   {
     computation_time += temp[cur].time_[temp[cur].cur_position].second - temp[cur].cur_time;
@@ -322,8 +326,9 @@ public:
            
            
         }
-        //cout<<"end simulation total makespan "<<make_span<<endl;
+        cout<<"end simulation total makespan "<<make_span<<endl;
         //cout<<"___________________________________________"<<endl;
+
         return make_span;
         
     }
@@ -602,9 +607,9 @@ int main(int argc, char *argv[])
   {
     for(int j = 0; j < index[i].size(); j++)
     {
-      cout<<index[i][j]<<" ";
+      //cout<<index[i][j]<<" ";
     }
-    cout<<endl;
+    //cout<<endl;
   }
   
   LocalSolver ls;
@@ -616,6 +621,7 @@ int main(int argc, char *argv[])
   m.constraint(m.count(kernels) == count);
   for(int i = 0; i < index.size(); i++)
   {
+    cout<<"application "<<i<<"'s kernel size: "<<index[i].size()<<endl;
     for(int j = 0; j < index[i].size() - 1; j++)
     {
       //for(int k = j + 1; k < index[i].size(); k++)
@@ -626,7 +632,7 @@ int main(int argc, char *argv[])
   }
   for(int i = 0; i < m.getNbConstraints(); i++)
   {
-    cout<<"constraint "<<i<<" : "<<m.getConstraint(i).toString()<<endl;
+    //cout<<"constraint "<<i<<" : "<<m.getConstraint(i).toString()<<endl;
   }
   LSmakespan makespanCode;
 // Step 2: Turn the external code into an LSExpression
@@ -635,6 +641,18 @@ int main(int argc, char *argv[])
 // Step 3: Call the function
   m.minimize(makespan(kernels));
   m.close();
+  LSSolution init_sol = ls.getSolution();
+  LSCollection init_tmp = init_sol.getCollectionValue(kernels);
+  vector<int> per;
+  ifstream kernel_order("kernel_order.log");
+  string line;
+  while ( getline(kernel_order,line) )
+  { 
+    per.push_back(stoi(line));
+    init_tmp.add(stoi(line));
+  }
+  kernel_order.close();
+
   ls.solve();
   LSSolution sol = ls.getSolution();
   LSCollection t = sol.getCollectionValue(kernels);
@@ -642,7 +660,7 @@ int main(int argc, char *argv[])
   for(int i = 0; i < t.count(); i++)
   {
     res.push_back(t[i]);
-    cout<<t[i]<<", ";
+    //cout<<t[i]<<", ";
   }
   double final = compute_solution(res);
   cout<<endl;
