@@ -1,7 +1,7 @@
 from numpy import random
 
 f = open("kernel.log", mode = 'r')
-output = open("detectron_merge.log", mode = 'w')
+output = open("detectron.log", mode = 'w')
 
 x = random.poisson(lam=500, size=20)
 total = f.readlines()
@@ -17,16 +17,12 @@ for line in total :
     number = float(temp[:-2])
     if(temp[-2:] == "us") : number = number / 1000 
     res += number
-    if(res >= 100) : 
-        result = "1 " + str(res) + "\n"
-        output.write(result)
-        iteration.append(result) 
-        print(result)
-        res = 0
-if res > 0 :
-    result = "1 " + str(res) + "\n"
+     
+    result = "1 " + str(number) + "\n"
     output.write(result)
     iteration.append(result) 
+    print(result)
+    
 idle = "0 " + str(x[0]) + "\n"
 output.write(idle)
 

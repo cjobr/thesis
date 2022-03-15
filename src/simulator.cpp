@@ -12,7 +12,7 @@
 #define MEMORY_CAPACITY 16.0 //GB
 #define STATIC_QUOTA 250.0 //ms 
 using namespace std;
-
+double guess_quota;
 //the class of each client
 class Client {
  public:
@@ -75,6 +75,7 @@ class Client {
     return weight_;
   }
   vector<pair<int, double>> time_; //0: idle, 1: kernel
+  vector<double> prefix_sum ={0};
 
   //the memory in GPU memory = memory_needed - memory_transfer
   double memory_needed;  //the total memory which this application needs
@@ -170,6 +171,7 @@ int main(int argc, char *argv[])
     temp -> memory_transfer = temp -> memory_needed;
     temp -> idx = i;
     string str;
+    int iter = 0;
     while(getline(app, text, '\n'))
     {
        std::istringstream input;
@@ -182,13 +184,15 @@ int main(int argc, char *argv[])
        }
        int kind = std::stoi(s[0]);
        double t = std::stod(s[1]);
+       temp -> prefix_sum.push_back(temp -> prefix_sum[iter] + t);
+       iter++;
        if(kind == 1)
        {
          idx.push_back(cnt);
          cnt++;
        }
        else idx.push_back(-1);
-       cout<<kind<<" "<<t<<endl;
+       //cout<<kind<<" "<<t<<endl;
        temp -> time_.push_back(make_pair(kind, t));
 
     }
@@ -208,7 +212,7 @@ int main(int argc, char *argv[])
   {
     for(auto time : apps[i].time_)maximal += time.second;
   }
-
+  guess_quota = 250;
 
 
 
@@ -244,14 +248,16 @@ int main(int argc, char *argv[])
     {
       cout<<"application: "<<i<<" memory_transfer: "<<apps[i].memory_transfer<<" memory_needed: "<<apps[i].memory_needed<<endl;
       if(apps[i].cur_position >= apps[i].time_.size() || apps[i].time_[apps[i].cur_position].first == 0)idle_cnt++;
-    }
       
-    job_queue.pop();
+    }
+    cout<<"idle client in the environment: "<<idle_cnt<<endl;
+    if(!job_queue.empty())job_queue.pop();
 
     //if current client is done, or current client is idle and there is an non-idle client, stop current client and push another client to the queue
-    if(apps[cur_idx].cur_position >= apps[cur_idx].time_.size() || (apps[cur_idx].time_[apps[cur_idx].cur_position].first == 0 && idle_cnt != apps.size())) //|| apps[cur_idx].time_[apps[cur_idx].cur_position].first == 0
+    /*if(apps[cur_idx].cur_position >= apps[cur_idx].time_.size() || (apps[cur_idx].time_[apps[cur_idx].cur_position].first == 0 && idle_cnt != apps.size()) ) //|| apps[cur_idx].time_[apps[cur_idx].cur_position].first == 0
     {
       cout<<"current client: "<<cur_idx<<endl;
+      if(apps[cur_idx].time_[apps[cur_idx].cur_position].first == 0)cout<<"in idle state"<<endl;
       cout<<"end execution"<<endl;
       cout<<"............................................"<<endl;
       t.clear();
@@ -277,11 +283,68 @@ int main(int argc, char *argv[])
         if(apps[t[0].idx].cur_position < apps[t[0].idx].time_.size())job_queue.push(t[0]);
       }
        continue;
+    }*/
+    cout<<job_queue.size()<<endl;
+    if(job_queue.empty())
+    {
+      cout<<"last client"<<endl;
+      for(int i = apps[cur_idx].cur_position; i < apps[cur_idx].time_.size(); i++)
+      {  
+        make_span += apps[cur_idx].time_[i].second;
+      }
+      
+      break;
     }
+    cout<<"debug"<<endl;
     Client nxt = job_queue.front();
+    if(nxt.idx == cur_idx || nxt.cur_position >= nxt.time_.size() || (nxt.time_[nxt.cur_position].first == 0 && nxt.cur_time + guess_quota < nxt.time_[nxt.cur_position].second) || (nxt.idx == cur_idx && nxt.prefix_sum[nxt.cur_position] + guess_quota >= nxt.prefix_sum[nxt.time_.size()]))
+    {
+      t = {};
+      cout<<"check next client"<<endl;
+      while(!job_queue.empty())job_queue.pop();
+      //if(job_queue.empty())break;
+      //nxt = job_queue.front();
+      for(int i = 0; i < apps.size(); i++)
+      {
+        if(apps[i].cur_position < apps[i].time_.size() && i != cur_idx)
+        {
+          //apps.erase(apps.begin() + i);
+          cout<<"add client : "<<i<<endl;
+          apps[i].update_weight();
+          t.push_back(apps[i]);
+        
+        }
+      }
+      cout<<"t size"<<t.size()<<endl;
+      if(t.size() == 0)
+      {
+        for(int i = 0; i < apps.size(); i++)
+      {
+        if(apps[i].cur_position < apps[i].time_.size() )
+        {
+          //apps.erase(apps.begin() + i);
+          cout<<"add client : "<<i<<endl;
+          apps[i].update_weight();
+          t.push_back(apps[i]);
+        
+        }
+      }
+      }
+      sort(t.begin(), t.end(), compare);
+      if(t.size() > 1)
+      {
+        if(apps[t[0].idx].cur_position < apps[t[0].idx].time_.size())job_queue.push(t[0]);
+        if(apps[t[t.size() - 1].idx].cur_position < apps[t[t.size() - 1].idx].time_.size())job_queue.push(t[t.size() - 1]);
+     }
+      else if(t.size() == 1)
+      {
+        if(apps[t[0].idx].cur_position < apps[t[0].idx].time_.size())job_queue.push(t[0]);
+      }
+    }
+    nxt = job_queue.front();
     apps[cur_idx].last_accessed = timestamp;
     //cout<<"gpu memory: "<<GPU_used<<"GB "<<endl;
-
+    
     //update make_span
     if(GPU_used + apps[nxt.idx].memory_transfer <= MEMORY_CAPACITY)// if GPU memory is enough, directly prefetch
     {
@@ -292,10 +355,13 @@ int main(int argc, char *argv[])
       cout<<"prefetch id: "<<nxt.idx<<"'s data"<<endl;
       GPU_used += apps[nxt.idx].memory_transfer;
       apps[nxt.idx].memory_transfer = 0;
-      if(transfer_time == 0)transfer_time = STATIC_QUOTA;
+      if(transfer_time == 0 )transfer_time = STATIC_QUOTA;
+      
       double computation_time = 0;
 
       //decide computation time
+      if(apps[cur_idx].memory_transfer == 0)
+      {
       for(int i = apps[cur_idx].cur_position; i < apps[cur_idx].time_.size() ;i++)
       {
         
@@ -345,6 +411,7 @@ int main(int argc, char *argv[])
         }
 
       }
+      }
       cout<<"prefetch time: "<<transfer_time<<" computation time: "<<computation_time<<endl;
 
       //update makespan
@@ -381,6 +448,8 @@ int main(int argc, char *argv[])
       double computation_time = 0;
 
       //update computaion time
+      if(apps[cur_idx].memory_transfer == 0)
+      {
       for(int i = apps[cur_idx].cur_position; i < apps[cur_idx].time_.size() ;i++)
       {
         
@@ -431,6 +500,7 @@ int main(int argc, char *argv[])
           }
           
         }
+      }
       }
       cout<<"prefetch time: "<<transfer_time<<" computation time: "<<computation_time<<endl;
 
@@ -513,8 +583,10 @@ int main(int argc, char *argv[])
     
 
     //update time_ position, only need to update clients which are idle
+    
     for(int i = 0; i < apps.size(); i++)
     {
+      
       double duration = duration_;
       //cout<<"i = "<<i<<" idx= "<<apps[i].idx<<endl;
       if(apps[i].idx == cur_idx)
@@ -547,6 +619,7 @@ int main(int argc, char *argv[])
       cout<<"update application "<<apps[i].idx<<" "<<apps[i].cur_position<<" "<<apps[i].cur_time<<endl;
 
     }
+    
 
     t.clear();
 
@@ -568,6 +641,22 @@ int main(int argc, char *argv[])
         if(apps[i].finish == 0)
         {
           GPU_used -= (apps[i].memory_needed - apps[i].memory_transfer);
+          vector<Client> temp;
+
+          if(i == cur_idx)
+          {
+            while(!job_queue.empty())
+            {
+              Client t = job_queue.front();
+              if(t.idx != cur_idx)temp.push_back(t);
+              job_queue.pop();
+            }
+            for(int j = 0; j < temp.size(); j++)
+            {
+              job_queue.push(temp[j]);
+            }
+          }
+
           apps[i].finish = 1;
           apps[i].memory_transfer = 0;
         }
@@ -611,7 +700,8 @@ int main(int argc, char *argv[])
   }
   cout<<"total time: "<<make_span<<endl;
   cout<<"expected maximal time: "<<maximal<<endl;
-  ofstream output("kernel_order.log", ios::out | ios::app | ios::binary);
+  cout<<"kernel order's size "<<kernel_order.size()<<endl;
+  ofstream output("kernel_order.log", ios::out | ios::binary);
   for(int i = 0; i < kernel_order.size() - 1; i++)
   {
     output<<kernel_order[i]<<endl;

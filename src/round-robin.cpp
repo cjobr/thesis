@@ -211,13 +211,18 @@ int main(int argc, char *argv[])
     for(int i = 0; i < apps.size(); i++)
       cout<<"memory_transfer: "<<apps[i].memory_transfer<<" memory_needed: "<<apps[i].memory_needed<<endl;
     job_queue.pop();
-    if(apps[cur_idx].cur_position >= apps[cur_idx].time_.size() || apps[cur_idx].time_[apps[cur_idx].cur_position].first == 0)
+    if(apps[cur_idx].cur_position >= apps[cur_idx].time_.size() )//|| apps[cur_idx].time_[apps[cur_idx].cur_position].first == 0)
     {
       cout<<"end execution"<<endl;
       cout<<"............................................"<<endl;
       continue;
     }
     Client nxt = job_queue.front();
+    if(nxt.finish == 1)
+    {
+      job_queue.pop();
+      nxt = job_queue.front();
+    }
     apps[cur_idx].last_accessed = timestamp;
     //cout<<"gpu memory: "<<GPU_used<<"GB "<<endl;
 

@@ -108,7 +108,7 @@ double calculateComputation(vector<int> p, int range, int indexOfP, vector<Clien
   int start = indexOfKernel(p[indexOfP]);
   if(start < temp[cur].cur_position)
   {
-    cout<<"violate rules"<<endl;
+    //cout<<"violate rules"<<endl;
     return 1.79769e+308;
   }
   while(start != temp[cur].cur_position)
@@ -326,7 +326,7 @@ public:
            
            
         }
-        cout<<"end simulation total makespan "<<make_span<<endl;
+        //cout<<"end simulation total makespan "<<make_span<<endl;
         //cout<<"___________________________________________"<<endl;
 
         return make_span;
@@ -628,7 +628,7 @@ int main(int argc, char *argv[])
         m.constraint(m.indexOf(kernels, index[i][j]) < m.indexOf(kernels, index[i][j + 1]));
      //cout<<index[i][j]<<" ";
     }
-    //cout<<endl;
+    //cout<<endl;./
   }
   for(int i = 0; i < m.getNbConstraints(); i++)
   {
@@ -642,7 +642,7 @@ int main(int argc, char *argv[])
   m.minimize(makespan(kernels));
   m.close();
   LSSolution init_sol = ls.getSolution();
-  LSCollection init_tmp = init_sol.getCollectionValue(kernels);
+  /*LSCollection init_tmp = init_sol.getCollectionValue(kernels);
   vector<int> per;
   ifstream kernel_order("kernel_order.log");
   string line;
@@ -651,7 +651,7 @@ int main(int argc, char *argv[])
     per.push_back(stoi(line));
     init_tmp.add(stoi(line));
   }
-  kernel_order.close();
+  kernel_order.close();*/
 
   ls.solve();
   LSSolution sol = ls.getSolution();
