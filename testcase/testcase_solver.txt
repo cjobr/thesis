@@ -1,4 +1,4 @@
 3
-/home/cjobr/thesis/testcase/detectron_merge.log
-/home/cjobr/thesis/testcase/detectron_merge.log
-/home/cjobr/thesis/testcase/detectron_merge.log
+/home/cjobr/thesis/testcase/detectron_100ms.log
+/home/cjobr/thesis/testcase/detectron_100ms.log
+/home/cjobr/thesis/testcase/detectron_100ms.log

@@ -9,7 +9,7 @@
 #define BANDWIDTH 0.01 // (GB/ms)
 #define WINDOW_SIZE 500.0 //ms
 #define MEMORY_CAPACITY 16.0 //GB
-#define STATIC_QUOTA 150.0 //ms 
+#define STATIC_QUOTA 250.0 //ms 
 using namespace std;
 class Client {
  public:

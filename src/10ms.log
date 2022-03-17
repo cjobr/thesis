@@ -1,0 +1,174 @@
+3
+file name: /home/cjobr/thesis/testcase/detectron_100ms.log
+6
+6
+file name: /home/cjobr/thesis/testcase/detectron_100ms.log
+6
+6
+file name: /home/cjobr/thesis/testcase/detectron_100ms.log
+6
+6
+application 0's kernel size: 50
+application 1's kernel size: 50
+application 2's kernel size: 50
+Preprocess model 0%
+Preprocess model 1%
+Preprocess model 2%
+Preprocess model 2%
+Preprocess model 3%
+Preprocess model 4%
+Preprocess model 5%
+Preprocess model 5%
+Preprocess model 6%
+Preprocess model 7%
+Preprocess model 8%
+Preprocess model 9%
+Preprocess model 9%
+Preprocess model 10%
+Preprocess model 11%
+Preprocess model 12%
+Preprocess model 13%
+Preprocess model 13%
+Preprocess model 25%
+Preprocess model 38%
+Preprocess model 50%
+Preprocess model 52%
+Preprocess model 53%
+Preprocess model 55%
+Preprocess model 56%
+Preprocess model 58%
+Preprocess model 59%
+Preprocess model 61%
+Preprocess model 63%
+Preprocess model 63%
+Preprocess model 75%
+Preprocess model 88%
+Preprocess model 89%
+Preprocess model 91%
+Preprocess model 93%
+Preprocess model 95%
+Preprocess model 96%
+Preprocess model 98%
+Preprocess model 100%
+Preprocess model 100%
+Preprocess model 100%
+Initialize solver 0%
+Initialize solver 14%
+Initialize solver 29%
+Initialize solver 43%
+Initialize solver 57%
+Initialize solver 71%
+Initialize solver 86%
+Initialize solver 86%
+Initialize solver 86%
+Initialize solver 87%
+Initialize solver 87%
+Initialize solver 87%
+Initialize solver 87%
+Initialize solver 88%
+Initialize solver 88%
+Initialize solver 88%
+Initialize solver 89%
+Initialize solver 89%
+Initialize solver 89%
+Initialize solver 90%
+Initialize solver 90%
+Initialize solver 90%
+Initialize solver 90%
+Initialize solver 91%
+Initialize solver 91%
+Initialize solver 91%
+Initialize solver 92%
+Initialize solver 92%
+Initialize solver 92%
+Initialize solver 92%
+Initialize solver 93%
+Initialize solver 93%
+Initialize solver 93%
+Initialize solver 94%
+Initialize solver 94%
+Initialize solver 94%
+Initialize solver 94%
+Initialize solver 95%
+Initialize solver 95%
+Initialize solver 95%
+Initialize solver 96%
+Initialize solver 96%
+Initialize solver 96%
+Initialize solver 97%
+Initialize solver 97%
+Initialize solver 97%
+Initialize solver 97%
+Initialize solver 98%
+Initialize solver 98%
+Initialize solver 98%
+Initialize solver 99%
+Initialize solver 99%
+Initialize solver 99%
+Initialize solver 99%
+Initialize solver 100%
+Initialize solver 100%
+Initialize solver 100%
+Initialize solver 100%
+Push initial solution 0%
+Push initial solution 2%
+Push initial solution 4%
+Push initial solution 6%
+Push initial solution 8%
+Push initial solution 10%
+Push initial solution 12%
+Push initial solution 14%
+Push initial solution 16%
+Push initial solution 18%
+Push initial solution 20%
+Push initial solution 22%
+Push initial solution 24%
+Push initial solution 27%
+Push initial solution 29%
+Push initial solution 31%
+Push initial solution 33%
+Push initial solution 35%
+Push initial solution 37%
+Push initial solution 39%
+Push initial solution 41%
+Push initial solution 43%
+Push initial solution 45%
+Push initial solution 47%
+Push initial solution 49%
+Push initial solution 51%
+Push initial solution 53%
+Push initial solution 55%
+Push initial solution 57%
+Push initial solution 59%
+Push initial solution 61%
+Push initial solution 63%
+Push initial solution 65%
+Push initial solution 67%
+Push initial solution 69%
+Push initial solution 71%
+Push initial solution 73%
+Push initial solution 76%
+Push initial solution 78%
+Push initial solution 80%
+Push initial solution 82%
+Push initial solution 84%
+Push initial solution 86%
+Push initial solution 88%
+Push initial solution 90%
+Push initial solution 92%
+Push initial solution 94%
+Push initial solution 96%
+Push initial solution 98%
+Push initial solution 100%
+Push initial solution 100%
+
+Model:  expressions = 597, decisions = 1, constraints = 148, objectives = 1
+Param:  time limit = 2000 sec, no iteration limit
+
+[objective direction ]:     minimize
+
+[  0 sec,       0 itr]: No feasible solution found (infeas = 148)
+[  1 sec,     999 itr]:      27158.1
+[  2 sec,    6441 itr]:      25562.5
+[  3 sec,   11499 itr]:      24059.5
+[  4 sec,   16569 itr]:      23375.6
