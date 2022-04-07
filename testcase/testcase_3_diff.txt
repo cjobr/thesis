@@ -1,0 +1,4 @@
+3
+/home/cjobr/thesis/testcase/detectron_inter_300.log
+/home/cjobr/thesis/testcase/detectron_inter_700.log
+/home/cjobr/thesis/testcase/detectron_inter_100.log

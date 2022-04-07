@@ -1,9 +1,9 @@
 from numpy import random
 
 f = open("kernel.log", mode = 'r')
-output = open("detectron_50ms.log", mode = 'w')
+output = open("detectron_100ms_inter_100.log", mode = 'w')
 
-x = random.poisson(lam=500, size=20)
+x = random.poisson(lam=100, size=20)
 total = f.readlines()
 res = 0.0
 j = 0
@@ -17,7 +17,7 @@ for line in total :
     number = float(temp[:-2])
     if(temp[-2:] == "us") : number = number / 1000 
     res += number
-    if(res >= 50) : 
+    if(res >= 100) : 
         result = "1 " + str(res) + "\n"
         output.write(result)
         iteration.append(result) 

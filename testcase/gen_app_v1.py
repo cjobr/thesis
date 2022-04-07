@@ -1,9 +1,12 @@
 from numpy import random
 
 f = open("kernel.log", mode = 'r')
-output = open("detectron.log", mode = 'w')
+output = open("detectron_inter_100.log", mode = 'w')
 
-x = random.poisson(lam=500, size=20)
+x = random.poisson(lam=100, size=20)
+f2 = open("random_700.log", mode = 'w')
+for i in range (0, 20):
+    f2.write(str(x[i]))
 total = f.readlines()
 res = 0.0
 j = 0

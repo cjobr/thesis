@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
   num_client = std::stoi(text);
   vector<Client> apps;
   MemoryManager mm;
-  queue<Client> job_queue;
+  queue<int> job_queue;
   
   //initialize each client
   //cout<<num_client<<endl;
@@ -186,15 +186,15 @@ int main(int argc, char *argv[])
   {
     for(int i = 0; i < apps.size(); i++)
     {
-      job_queue.push(apps[i]);
+      job_queue.push(i);
     }
   }
   double make_span = 0;
   double pre_make_span;
   double GPU_used = 0;
-  make_span += (double)(job_queue.front().memory_transfer/BANDWIDTH);
-  GPU_used += job_queue.front().memory_transfer;
-  apps[job_queue.front().idx].memory_transfer = 0;
+  make_span += (double)(apps[job_queue.front()].memory_transfer/BANDWIDTH);
+  GPU_used += apps[job_queue.front()].memory_transfer;
+  apps[apps[job_queue.front()].idx].memory_transfer = 0;
 
   //periodically calculate each client's weight, and get schedule order.
   int timestamp = 0;
@@ -205,7 +205,7 @@ int main(int argc, char *argv[])
     
     pre_make_span = make_span;
     timestamp++;
-    Client cur = job_queue.front();
+    Client cur = apps[job_queue.front()];
     //cout<<"current client id: "<<cur.idx<<endl;
     int cur_idx = cur.idx;
     for(int i = 0; i < apps.size(); i++)
@@ -217,11 +217,11 @@ int main(int argc, char *argv[])
       cout<<"............................................"<<endl;
       continue;
     }
-    Client nxt = job_queue.front();
-    if(nxt.finish == 1)
+    Client nxt = apps[job_queue.front()];
+    while(nxt.finish == 1 || nxt.cur_position >= nxt.time_.size())
     {
       job_queue.pop();
-      nxt = job_queue.front();
+      nxt = apps[job_queue.front()];
     }
     apps[cur_idx].last_accessed = timestamp;
     //cout<<"gpu memory: "<<GPU_used<<"GB "<<endl;

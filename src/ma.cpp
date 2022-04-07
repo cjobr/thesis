@@ -8,7 +8,7 @@
 
 //basic setting of some parameters
 #define BANDWIDTH 0.01 // (GB/ms)
-#define WINDOW_SIZE 1000.0 //ms
+#define WINDOW_SIZE 500.0 //ms
 #define MEMORY_CAPACITY 16.0 //GB
 #define STATIC_QUOTA 250.0 //ms 
 using namespace std;
@@ -114,8 +114,7 @@ class MemoryManager {
 //compare function of weight
 bool compare(Client c1, Client c2)
 {
-  if(c1.get_weight() == c2.get_weight())return c1.memory_transfer < c2.memory_transfer;
-  return c1.get_weight() < c2.get_weight();
+  return c1.memory_transfer < c2.memory_transfer;
 }
 
 
@@ -335,7 +334,7 @@ int main(int argc, char *argv[])
       {
         if(apps[t[0].idx].cur_position < apps[t[0].idx].time_.size())job_queue.push(t[0]);
         if(apps[t[t.size() - 1].idx].cur_position < apps[t[t.size() - 1].idx].time_.size())job_queue.push(t[t.size() - 1]);
-     }
+      }
       else if(t.size() == 1)
       {
         if(apps[t[0].idx].cur_position < apps[t[0].idx].time_.size())job_queue.push(t[0]);
@@ -685,10 +684,10 @@ int main(int argc, char *argv[])
     sort(t.begin(), t.end(), compare);
 
     //add clients to job queue when the size of queue is equal to 1 or less
-    if(t.size() > 1 && job_queue.size() <= 1)
+    if(t.size() > 1  && job_queue.size() <= 1)
     {
       if(apps[t[0].idx].cur_position < apps[t[0].idx].time_.size())job_queue.push(t[0]);
-      if(apps[t[t.size() - 1].idx].cur_position < apps[t[t.size() - 1].idx].time_.size())job_queue.push(t[t.size() - 1]);
+      if(apps[t[1].idx].cur_position < apps[t[t.size() - 1].idx].time_.size())job_queue.push(t[1]);
     }
     else if(t.size() == 1 && job_queue.size() <= 1)
     {
