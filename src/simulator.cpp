@@ -5,7 +5,7 @@
 #include<queue>
 #include<algorithm>
 #include<sstream>
-
+#include <chrono>
 //basic setting of some parameters
 #define BANDWIDTH 0.01 // (GB/ms)
 #define WINDOW_SIZE 1000.0 //ms
@@ -155,6 +155,7 @@ int main(int argc, char *argv[])
   MemoryManager mm;
   queue<Client> job_queue;
   vector<vector<int>> index;
+  vector<double> scheduling_time;
   //initialize each client
   //cout<<num_client<<endl;
   int cnt = 0;
@@ -581,7 +582,6 @@ int main(int argc, char *argv[])
     cout<<"current application id: "<<cur.idx<<" ,quota: "<<duration_<<" memory used: "<<GPU_used<<endl;
     //cout<<"duraton : "<<duration<<endl;
     
-
     //update time_ position, only need to update clients which are idle
     
     for(int i = 0; i < apps.size(); i++)
@@ -625,14 +625,19 @@ int main(int argc, char *argv[])
 
 
     //compute each client's weight except current client
-    
+    double schedule = 0.0;
+
     for(int i = 0; i < apps.size(); i++)
     {
       //cout<<apps[i].cur_position<<endl;
       if(apps[i].cur_position < apps[i].time_.size() && i != cur_idx)
       {
         //apps.erase(apps.begin() + i);
+        auto start = std::chrono::high_resolution_clock::now();
         apps[i].update_weight();
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> float_ms = end - start;
+        schedule += float_ms.count();
         t.push_back(apps[i]);
         
       }
@@ -682,8 +687,12 @@ int main(int argc, char *argv[])
       cout<<"end simulation"<<endl;
       break;
     }
+    auto start = std::chrono::high_resolution_clock::now();
     sort(t.begin(), t.end(), compare);
-
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> float_ms = end - start;
+    schedule += float_ms.count();
+    scheduling_time.push_back(schedule);
     //add clients to job queue when the size of queue is equal to 1 or less
     if(t.size() > 1 && job_queue.size() <= 1)
     {
@@ -707,5 +716,12 @@ int main(int argc, char *argv[])
     output<<kernel_order[i]<<endl;
   }
   output<<kernel_order[kernel_order.size() - 1];
+  double totol_schedule_time;
+  for(int i = 0; i < scheduling_time.size(); i++)
+  {
+    totol_schedule_time += scheduling_time[i];
+    cout<<scheduling_time[i]<<endl;
+  }
+  cout<<"average scheduling time: "<<totol_schedule_time/scheduling_time.size()<<endl;
 
 }

@@ -1,0 +1,5 @@
+4
+/home/cjobr/thesis/testcase/needle/needle_inter_550_solver.log
+/home/cjobr/thesis/testcase/srad/srad_inter_700_solver.log
+/home/cjobr/thesis/testcase/dwt2d/dwt2d_inter_820_solver.log
+/home/cjobr/thesis/testcase/bfs/bfs_inter_940_solver.log

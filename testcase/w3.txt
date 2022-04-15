@@ -1,0 +1,4 @@
+3
+/home/cjobr/thesis/testcase/needle/needle_inter_550.log
+/home/cjobr/thesis/testcase/srad/srad_inter_700.log
+/home/cjobr/thesis/testcase/dwt2d/dwt2d_inter_820.log

@@ -8,7 +8,7 @@
 
 //basic setting of some parameters
 #define BANDWIDTH 0.01 // (GB/ms)
-#define WINDOW_SIZE 500.0 //ms
+#define WINDOW_SIZE 1000.0 //ms
 #define MEMORY_CAPACITY 16.0 //GB
 #define STATIC_QUOTA 250.0 //ms 
 using namespace std;
@@ -63,10 +63,10 @@ class Client {
         }
       }
     }
-    double reward = computation/(computation + idle);
-    double penalty = this -> memory_transfer/BANDWIDTH;
+    //double reward = computation/(computation + idle);
+    //double penalty = this -> memory_transfer/BANDWIDTH;
     
-    this -> weight_ = reward/penalty;
+    this -> weight_ = computation;
    
 
   }
@@ -85,6 +85,7 @@ class Client {
   int last_accessed; //the timestamp to denote the last time which memory was accessed
   int idx; 
   int finish = 0;
+  int in_queue = 0;
   
 
  private:
@@ -218,7 +219,9 @@ int main(int argc, char *argv[])
   vector<Client> t(apps.begin(), apps.end());
   std::sort(t.begin(), t.end(), compare);
   job_queue.push(t[0]);
-  job_queue.push(t[t.size() - 1]);
+  job_queue.push(t[1]);
+  apps[t[0].idx].in_queue = 1;
+  apps[t[1].idx].in_queue = 1;
   double make_span = 0;
   double pre_make_span;
   double GPU_used = 0;
@@ -250,7 +253,11 @@ int main(int argc, char *argv[])
       
     }
     cout<<"idle client in the environment: "<<idle_cnt<<endl;
-    if(!job_queue.empty())job_queue.pop();
+    if(!job_queue.empty())
+    {
+      job_queue.pop();
+      apps[cur_idx].in_queue = 0;
+    }
 
     //if current client is done, or current client is idle and there is an non-idle client, stop current client and push another client to the queue
     /*if(apps[cur_idx].cur_position >= apps[cur_idx].time_.size() || (apps[cur_idx].time_[apps[cur_idx].cur_position].first == 0 && idle_cnt != apps.size()) ) //|| apps[cur_idx].time_[apps[cur_idx].cur_position].first == 0
@@ -296,16 +303,21 @@ int main(int argc, char *argv[])
     }
     cout<<"debug"<<endl;
     Client nxt = job_queue.front();
-    if(nxt.idx == cur_idx || nxt.cur_position >= nxt.time_.size() || (nxt.time_[nxt.cur_position].first == 0 && nxt.cur_time + guess_quota < nxt.time_[nxt.cur_position].second) || (nxt.idx == cur_idx && nxt.prefix_sum[nxt.cur_position] + guess_quota >= nxt.prefix_sum[nxt.time_.size()]))
+    /*if(nxt.idx == cur_idx || nxt.cur_position >= nxt.time_.size() || (nxt.time_[nxt.cur_position].first == 0 && nxt.cur_time + guess_quota < nxt.time_[nxt.cur_position].second) || (nxt.idx == cur_idx && nxt.prefix_sum[nxt.cur_position] + guess_quota >= nxt.prefix_sum[nxt.time_.size()]))
     {
       t = {};
       cout<<"check next client"<<endl;
-      while(!job_queue.empty())job_queue.pop();
+      while(!job_queue.empty())
+      {
+        int id = job_queue.front().idx;
+        apps[id].in_queue = 0;
+        job_queue.pop();
+      }
       //if(job_queue.empty())break;
       //nxt = job_queue.front();
       for(int i = 0; i < apps.size(); i++)
       {
-        if(apps[i].cur_position < apps[i].time_.size() && i != cur_idx)
+        if(apps[i].cur_position < apps[i].time_.size() && i != cur_idx && apps[i].time_[apps[i].cur_position].first != 0)
         {
           //apps.erase(apps.begin() + i);
           cout<<"add client : "<<i<<endl;
@@ -332,15 +344,27 @@ int main(int argc, char *argv[])
       sort(t.begin(), t.end(), compare);
       if(t.size() > 1)
       {
-        if(apps[t[0].idx].cur_position < apps[t[0].idx].time_.size())job_queue.push(t[0]);
-        if(apps[t[t.size() - 1].idx].cur_position < apps[t[t.size() - 1].idx].time_.size())job_queue.push(t[t.size() - 1]);
-      }
+        if(apps[t[0].idx].cur_position < apps[t[0].idx].time_.size())
+        {
+          job_queue.push(t[0]);
+          apps[t[0].idx].in_queue = 1;
+        }
+        if(apps[t[1].idx].cur_position < apps[t[1].idx].time_.size())
+        {
+          job_queue.push(t[1]);
+          apps[t[0].idx].in_queue = 1;
+        }
+     }
       else if(t.size() == 1)
       {
-        if(apps[t[0].idx].cur_position < apps[t[0].idx].time_.size())job_queue.push(t[0]);
+        if(apps[t[0].idx].cur_position < apps[t[0].idx].time_.size())
+        {
+          job_queue.push(t[0]);
+          apps[t[0].idx].in_queue = 1;
+        }
       }
     }
-    nxt = job_queue.front();
+    nxt = job_queue.front();*/
     apps[cur_idx].last_accessed = timestamp;
     //cout<<"gpu memory: "<<GPU_used<<"GB "<<endl;
     
@@ -628,11 +652,14 @@ int main(int argc, char *argv[])
     for(int i = 0; i < apps.size(); i++)
     {
       //cout<<apps[i].cur_position<<endl;
-      if(apps[i].cur_position < apps[i].time_.size() && i != cur_idx)
+      if(apps[i].cur_position < apps[i].time_.size() && i != cur_idx && apps[i].time_[apps[i].cur_position].first != 0)
       {
         //apps.erase(apps.begin() + i);
         apps[i].update_weight();
-        t.push_back(apps[i]);
+        if(apps[i].in_queue == 0)
+        {
+          t.push_back(apps[i]);
+        }
         
       }
       if(apps[i].cur_position >= apps[i].time_.size())
@@ -684,14 +711,30 @@ int main(int argc, char *argv[])
     sort(t.begin(), t.end(), compare);
 
     //add clients to job queue when the size of queue is equal to 1 or less
-    if(t.size() > 1  && job_queue.size() <= 1)
+    if(t.size() > 1 && job_queue.size() <= 1)
     {
-      if(apps[t[0].idx].cur_position < apps[t[0].idx].time_.size())job_queue.push(t[0]);
-      if(apps[t[1].idx].cur_position < apps[t[t.size() - 1].idx].time_.size())job_queue.push(t[1]);
+      if(apps[t[0].idx].cur_position < apps[t[0].idx].time_.size())
+      {
+        {
+          job_queue.push(t[0]);
+          apps[t[0].idx].in_queue = 1;
+        }
+      }
+      if(apps[t[1].idx].cur_position < apps[t[1].idx].time_.size())
+      {
+          job_queue.push(t[1]);
+          apps[t[1].idx].in_queue = 1;
+      }
     }
     else if(t.size() == 1 && job_queue.size() <= 1)
     {
-      if(apps[t[0].idx].cur_position < apps[t[0].idx].time_.size())job_queue.push(t[0]);
+      if(apps[t[0].idx].cur_position < apps[t[0].idx].time_.size())
+      {
+        {
+          job_queue.push(t[0]);
+          apps[t[0].idx].in_queue = 1;
+        }
+      }
     }
     
     
